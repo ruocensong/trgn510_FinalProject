@@ -19,11 +19,13 @@
 * https://www.bioconductor.org/packages/devel/workflows/vignettes/RNAseq123/inst/doc/limmaWorkflow.html
 
 ## Data
-I download the data from https://portal.gdc.cancer.gov/. 201 cases are about white males and 128 cases are about white females dead of brain cancer from 10 to 60 years old.
+I find the data from https://portal.gdc.cancer.gov/. 201 cases are about white males and 128 cases are about white females dead of brain cancer from 10 to 60 years old.
 
 ## Milestone 1
+I download raw data about brain cancer and handle them in Rstudio. After data processing, it could be saved as CSV file. When I load it into Vignette, it could be successful to run. In this part, I will complete section 4 and 5 in Vignette.
 
 ## Milestone 2
+Using previous data, I could analyze different gene expression. In this way, I will finish Vignette's section 6.
 
 ## Deliverable
 *R Markdown*
