@@ -19,7 +19,7 @@
 * https://www.bioconductor.org/packages/devel/workflows/vignettes/RNAseq123/inst/doc/limmaWorkflow.html
 
 ## Data
-I find the data in the HTSeq counts file format from https://portal.gdc.cancer.gov/. The website shows me 20 cases, which are about Age 10-40, and 40 cases, which are about Age 41-60, white female dead of brain cancer.
+I find the data in the HTSeq counts file format from https://portal.gdc.cancer.gov/. The website shows me 20 cases, which are about Age 10-40, and 40 cases, which are about Age 41-60, white female dead of brain cancer. However, I choose 20 cases for each part.
 * Age 10-40 cases:  
 21badc40-5fb8-496d-a3e6-4f0704500a5d.htseq.counts.gz  
 2fafd7bb-e8ce-4b03-8607-cf6cb2a2119a.htseq.counts.gz  
