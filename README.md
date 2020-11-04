@@ -65,7 +65,7 @@ e934722f-3571-4348-a518-1ad262b86b94.htseq.counts.gz
 ceb8fbdf-dd36-4273-b17c-0ee2eca493c5.htseq.counts.gz  
 
 ## Milestone 1
-I download raw data about brain cancer and handle them in Rstudio. After data processing, it could be saved as CSV file. When I load it into Vignette, it could be successful to run. In this part, I will complete section 4 and 5 in Vignette.
+I download 40 HTSeq counts format files from the website and handle them in Rstudio. After load the files, I package the data by organising sample inforamtion and gene annotations. Then I pre-process the data by transforming raw counts onto the scale format, removing low-expressed genes, normalising gene expression distributions and analyze the data in an unsupervised manner.
 
 ## Milestone 2
 Using previous data, I could analyze different gene expression. In this way, I will finish Vignette's section 6.
