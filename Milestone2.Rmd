@@ -1,0 +1,348 @@
+---
+title: "FinalProject"
+author: "Ruocen Song"
+output: html_document
+---
+
+# Set-up
+
+To download the packages.
+
+```{r}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("limma")
+BiocManager::install("Glimma")
+BiocManager::install("edgeR")
+BiocManager::install("Homo.sapiens")
+library(limma)
+library(Glimma)
+library(edgeR)
+library(Homo.sapiens)
+```
+
+#Data pre-processing
+
+## Reading in count-data
+
+To load the files in it. Then read and show it. Last, to get the directory.
+
+```{r}
+setwd ('/Users/RuocenS/Desktop/3')
+files <- c("21badc40-5fb8-496d-a3e6-4f0704500a5d.htseq.counts","2fafd7bb-e8ce-4b03-8607-cf6cb2a2119a.htseq.counts","349eaa81-0d2c-4c2b-a762-31555fd1ca50.htseq.counts","820e3299-bd67-4ba8-a637-32d31205e120.htseq.counts","7824eae3-957c-4515-b128-45453a11624d.htseq.counts","960fa206-af01-4f92-b066-4e899fe356fb.htseq.counts","98cf4f9b-aa89-4c14-b84b-2b8f32439ea0.htseq.counts","d6706bff-1f56-43a5-a180-1223034cfc09.htseq.counts","fc8d7362-7eb6-42bb-b3eb-dba3053aa381.htseq.counts","646f0e58-d861-4761-9fd5-2e48cd28753e.htseq.counts","39701843-3dae-4114-b04c-b3387e402e4f.htseq.counts","63a70793-af6d-4248-9085-5d69276a3fff.htseq.counts","709ff388-3764-4251-90b4-88728468e9f1.htseq.counts","71e3ff84-ab49-4906-99de-3b873ea04c68.htseq.counts","7376f374-1439-405e-87d3-c45cfac92ed5.htseq.counts","88956de1-e6a5-425d-b7dc-2e095c7effee.htseq.counts","c42fa4ad-4f31-4dfd-b499-599896a57517.htseq.counts","c5be9ea4-315d-4675-ad8e-269e44b7b77c.htseq.counts","cd5f0be9-9011-4826-99bc-2850f878ee4e.htseq.counts","f8e7cbd2-b54a-4f30-8fc1-a5c80bfad8b6.htseq.counts",
+"0e30bd18-8e8b-4c52-aace-b5587c6df51a.htseq.counts","12fbb8e2-457e-48c2-8afe-92c032020580.htseq.counts","2556ce90-db5f-4beb-897a-db3cf556e054.htseq.counts","2c15cc20-2347-4bfc-826d-a062f6d74b46.htseq.counts","2eb90caf-5d1f-48c0-b0c6-8d13c6ef7a4c.htseq.counts","2f7160fe-5f34-49bc-95fd-029ce83d8c42.htseq.counts","35d0022b-f677-4340-a3db-c6558782b9d7.htseq.counts","5d57e2e2-a409-4392-8ea8-900a08a25a6f.htseq.counts","62727106-91c2-4f63-8ce5-d207569b38e4.htseq.counts","681955cd-356d-4e64-924b-b0381e3c12bc.htseq.counts","12b9d0de-401d-4656-8df0-1834dce82751.htseq.counts","29e74bed-6e84-497e-b78c-1133771203f3.htseq.counts","337e33d8-d151-4509-8b16-62b288489c4c.htseq.counts","37355f52-90e5-43e8-a473-0d3bad45a394.htseq.counts",
+"3af76286-821a-4552-b4f2-b048342abb6e.htseq.counts","40714706-62ad-4e65-856e-1f40ca0a0fe7.htseq.counts","982e2940-10b0-4383-bde8-f7ccb9920fc4.htseq.counts","9c10ea63-f990-4c9b-9149-df9583e59610.htseq.counts","aee96226-464f-4ab1-ad5f-a9295b9b6a0e.htseq.counts","e9a0fc7b-94ea-477d-918a-1ef80fefefcd.htseq.counts")
+read.delim(files[1],nrow=5,header=FALSE)
+getwd()
+```
+
+Using readDGE function in edgeR package, I could get a result which includes a matrix of counts of 40 files.
+
+```{r}
+x <- readDGE(files, columns=c(1,2))
+class(x)
+```
+
+Calculating dimension.
+
+```{r}
+dim(x)
+```
+
+## Organising sample information
+
+I extract the columns' names as sample names.
+
+```{r}
+samplenames <- colnames(x)
+samplenames
+```
+
+I add a column in x. In this way, the samples are grouped by their ages.
+
+```{r}
+colnames(x) <- samplenames
+group <- c(rep("Age10_40",20),rep("Age60_90",20))
+x$samples$group <- group
+lane <- as.factor(rep(c("female","male","female","male"), c(10,10,10,10)))
+x$samples$lane <- lane
+x$samples
+```
+
+## Organising gene annotations
+
+I extract gene ids from x. And I delete the decimal of the digits because of the different format between "Homo.sapiens" library and my files.
+
+```{r}
+install.packages("gsubfn")
+library(gsubfn)
+geneid <- rownames(x)
+geneid <- gsub("\\.[0-9]*$","",geneid)
+head(geneid)
+```
+
+I extract the symbol and chromosome numbers from the "Homo.sapiens" library.
+
+```{r}
+genes <- select(Homo.sapiens, keys=geneid, columns=c("SYMBOL", "TXCHROM"), 
+                keytype="ENSEMBL")
+head(genes)
+```
+
+I remove the duplicated genes.
+
+```{r}
+genes <- genes[!duplicated(genes$ENSEMBL),]
+```
+
+I add genes information in the dataframe.
+
+```{r}
+x$genes <- genes
+x
+```
+
+# Data pre-processing
+
+## Transformations from the raw-scale
+
+I transform the data from raw format into others which could be more useful. Then I calculate the average and median of the library size.
+
+```{r}
+cpm <- cpm(x)
+lcpm <- cpm(x, log=TRUE)
+
+L <- mean(x$samples$lib.size) * 1e-6
+M <- median(x$samples$lib.size) * 1e-6
+c(L, M)
+```
+
+The summary of lcpm.
+
+```{r}
+summary(lcpm)
+```
+
+## Removing genes that are lowly expressed
+
+The table shows that zero counts across all nine samples because x includes expressed genes and not expressed genes.
+
+```{r}
+table(rowSums(x$counts==0)==9)
+```
+
+This way is to remove low-expressed genes.
+
+```{r}
+keep.exprs <- filterByExpr(x, group=group)
+x <- x[keep.exprs,, keep.lib.sizes=FALSE]
+dim(x)
+```
+
+I use the plots to show the number of genes which are removed from 59987 to 21660. A is raw data, and B is filtered data.
+
+```{r}
+lcpm.cutoff <- log2(10/M + 2/L)
+library(RColorBrewer)
+nsamples <- ncol(x)
+col <- brewer.pal(nsamples, "Paired")
+par(mfrow=c(1,2))
+plot(density(lcpm[,1]), col=col[1], lwd=2, ylim=c(0,0.26), las=2, main="", xlab="")
+title(main="A. Raw data", xlab="Log-cpm")
+abline(v=lcpm.cutoff, lty=3)
+for (i in 2:nsamples){
+den <- density(lcpm[,i])
+lines(den$x, den$y, col=col[i], lwd=2)
+}
+legend("topright", samplenames, text.col=col, bty="n")
+lcpm <- cpm(x, log=TRUE)
+plot(density(lcpm[,1]), col=col[1], lwd=2, ylim=c(0,0.26), las=2, main="", xlab="")
+title(main="B. Filtered data", xlab="Log-cpm")
+abline(v=lcpm.cutoff, lty=3)
+for (i in 2:nsamples){
+den <- density(lcpm[,i])
+lines(den$x, den$y, col=col[i], lwd=2)
+}
+legend("topright", samplenames, text.col=col, bty="n")
+```
+
+## Normalising gene expression distributions
+
+I apply TMM method to normalise data. Then I store the data as norm.factors into samples of x.
+
+```{r}
+x <- calcNormFactors(x, method = "TMM")
+x$samples$norm.factors
+```
+
+To show a better representation of normalisation, I reduced to 5% for  first sample, and the second sample are increased to be 5-times.
+
+```{r}
+x2 <- x
+x2$samples$norm.factors <- 1
+x2$counts[,1] <- ceiling(x2$counts[,1]*0.05)
+x2$counts[,2] <- x2$counts[,2]*5
+```
+
+The plot shows the expression distribution of samples for unnormalised data.
+
+```{r}
+par(mfrow=c(1,2))
+lcpm <- cpm(x2, log=TRUE)
+boxplot(lcpm, las=2, col=col, main="")
+title(main="A. Example: Unnormalised data",ylab="Log-cpm")
+x2 <- calcNormFactors(x2)  
+x2$samples$norm.factors
+```
+
+The plot shows the expression distribution of samples for normalised data.
+
+```{r}
+lcpm <- cpm(x2, log=TRUE)
+boxplot(lcpm, las=2, col=col, main="")
+title(main="B. Example: Normalised data",ylab="Log-cpm")
+```
+
+## Unsupervised clustering of samples
+
+The multi-dimensional scaling plot represent the similarity and dissimilarity of the sample in an unsupervised manner.
+
+```{r}
+lcpm <- cpm(x, log=TRUE)
+par(mfrow=c(1,2))
+
+col.group <- group
+levels(col.group) <-  brewer.pal(nlevels(col.group), "Set1")
+col.group <- as.character(col.group)
+col.group <- c("green","yellow")[group]
+col.lane <- lane
+levels(col.lane) <-  brewer.pal(nlevels(col.lane), "Set2")
+col.lane <- as.character(col.lane)
+col.lane <- c("red","blue")[lane]
+plotMDS(lcpm, labels=group, col=col.group, dim=c(1,2))
+title(main="A. Sample groups")
+plotMDS(lcpm, labels=lane, col=col.lane, dim=c(3,4))
+title(main="B. Sequencing lanes")
+```
+
+The glMDSPlot function generates an html page to show an MDS plot and a barplot about the proportion of variation. Individual information are shown by clicking the bars.
+
+```{r}
+glMDSPlot(lcpm, labels=paste(group, lane, sep="_"), 
+          groups=x$samples[,c(2,5)], launch=FALSE)
+```
+
+# Differential expression analysis
+
+## Creating a design matrix and contrasts
+
+To get start, a matrix including groups need to be set.
+
+```{r}
+design <- model.matrix(~0+group+lane)
+colnames(design) <- gsub("group", "", colnames(design))
+design
+```
+
+A matrix is created, which store contrasts for pairwise comparisons of two groups.
+
+```{r}
+contr.matrix <- makeContrasts(
+   Age60_90vsAge10_40 = Age60_90 - Age10_40,
+   levels = colnames(design))
+contr.matrix
+```
+
+## Removing heteroscedascity from count data
+
+Through extracting library sizes and normalisation factors, voom is used to transform raw data to log-CPM values.
+
+```{r}
+par(mfrow=c(1,2))
+v <- voom(x, design, plot=TRUE)
+v
+```
+
+The black dot mean a gene in two plots. The first plot use the red curve to show the estimated mean-variance trend used to compute the voom weights; however, the second one is the average log2 residual standard deviation estimated by the empirical Bayes algorithm.
+
+```{r}
+vfit <- lmFit(v, design)
+vfit <- contrasts.fit(vfit, contrasts=contr.matrix)
+efit <- eBayes(vfit)
+plotSA(efit, main="Final model: Mean-variance trend")
+```
+
+## Examining the number of DE genes
+
+The summary about treat method to show significance of data.
+
+```{r}
+summary(decideTests(efit))
+```
+
+The option "lfc=0.07" means a log-FC that is significantly greater than 0.5.
+
+```{r}
+tfit <- treat(vfit, lfc=0.07)
+dt <- decideTests(tfit)
+summary(dt)
+```
+
+The gene, whose log-FC that is significantly greater than 0.07, is chosen and save it in a file.
+
+```{r}
+de.common <- which(dt[,1]!=0)
+length(de.common)
+```
+
+```{r}
+head(tfit$genes$SYMBOL[de.common], n=20)
+```
+
+```{r}
+vennDiagram(dt[,1], circle.col=c("turquoise", "salmon"))
+```
+
+```{r}
+write.fit(tfit, dt, file="results.txt")
+```
+
+## Examining individual DE genes from top to bottom
+
+The "topTreat" is a function to choose the top DE genes.
+
+```{r}
+Age60_90.vs.Age10_40 <- topTreat(tfit, coef=1, n=Inf)
+head(Age60_90.vs.Age10_40)
+```
+
+## Useful graphical representations of differential expression results
+
+The "plotMD" function is used to show the relationship between log-FCs and the average values of log-CPM, and highlight the differentially expressed genes.
+
+```{r}
+plotMD(tfit, column=1, status=dt[,1], main=colnames(tfit)[1], 
+       xlim=c(-8,13))
+```
+
+Creatinh an html page to show an interactive mean-difference plot. Individual information are shown by clicking the bars.
+
+```{r}
+glMDPlot(tfit, coef=1, status=dt, main=colnames(tfit)[1],
+         side.main="ENSEMBL", counts=lcpm, groups=group, launch=TRUE)
+```
+
+The plot is used to create a heatmap for the top DE genes. 
+
+```{r}
+library(gplots)
+install.packages("heatmap.plus")
+library(heatmap.plus)
+Age60_90.vs.Age10_40.topgenes <- Age60_90.vs.Age10_40$ENSEMBL[1:50]
+i <- which(v$genes$ENSEMBL %in% Age60_90.vs.Age10_40.topgenes)
+mycol <- colorpanel(1000,"blue","white","red")
+par(cex.main=0.8,mar=c(1,1,1,1))
+heatmap.plus(lcpm[i,], scale="row", labRow=v$genes$SYMBOL[i], labCol=group, col=mycol, cexRow = 1, cexCol = 0.2, margin=c(8,6), main = "HeatMap")
+```
+
